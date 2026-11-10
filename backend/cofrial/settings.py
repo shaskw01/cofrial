@@ -7,6 +7,7 @@ En desarrollo local se cargan desde el archivo .env de la raiz del repositorio
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -118,9 +119,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    # Por defecto todo exige sesion; cada vista publica declara AllowAny explicitamente.
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "COERCE_DECIMAL_TO_STRING": False,
+}
+
+# Tokens JWT: no agregan tablas a la base de datos (el modelo de 18 tablas queda intacto).
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "USER_ID_FIELD": "id_usuario",
+    "USER_ID_CLAIM": "id_usuario",
+    "UPDATE_LAST_LOGIN": False,
 }

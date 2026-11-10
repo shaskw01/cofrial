@@ -1,0 +1,128 @@
+### Prueba de la Fase 2 — API REST
+### Se usa con la extensión "REST Client" de VS Code (botón "Send Request" sobre cada bloque).
+### Antes: levantar el backend (python manage.py runserver 8001) y poner abajo la DEMO_PASSWORD de tu .env.
+### OJO: no hagas commit de este archivo con la contraseña real escrita.
+
+@base = http://localhost:8001/api
+@password = PON-AQUI-TU-DEMO_PASSWORD
+
+### 1. Catálogo como visitante (precios B2C)
+GET {{base}}/productos
+
+### 2. Login cliente B2B (hospital)
+# @name b2b
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"email": "compras@hospitalregional.cl", "password": "{{password}}"}
+
+### 3. Perfil: rol cliente, tipo_cliente B2B
+GET {{base}}/auth/me
+Authorization: Bearer {{b2b.response.body.access}}
+
+### 4. Catálogo con precio institucional (más bajo que en el paso 1)
+GET {{base}}/productos?categoria=Insumos hospitalarios
+Authorization: Bearer {{b2b.response.body.access}}
+
+### 5. Checkout B2B (anotar el stock del producto 10 antes y después: baja en 5)
+# @name pedido
+POST {{base}}/pedidos
+Authorization: Bearer {{b2b.response.body.access}}
+Content-Type: application/json
+
+{
+  "items": [{"id_producto": 10, "cantidad": 5}],
+  "fecha_entrega_solicitada": "2026-11-13",
+  "numero_oc": "OC-2026-0042"
+}
+
+### 6. Pedir más stock del disponible -> 409 con el detalle de faltantes
+POST {{base}}/pedidos
+Authorization: Bearer {{b2b.response.body.access}}
+Content-Type: application/json
+
+{
+  "items": [{"id_producto": 10, "cantidad": 999999}],
+  "fecha_entrega_solicitada": "2026-11-13",
+  "numero_oc": "OC-2026-0043"
+}
+
+### 7. Mis pedidos (cliente)
+GET {{base}}/mis-pedidos
+Authorization: Bearer {{b2b.response.body.access}}
+
+### 8. Login vendedor
+# @name vendedor
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"email": "vendedor@cofrial.cl", "password": "{{password}}"}
+
+### 9. El pedido del paso 5 aparece para el vendedor
+GET {{base}}/pedidos?estado=Recibido
+Authorization: Bearer {{vendedor.response.body.access}}
+
+### 10. CRM: Kanban (oportunidades con su etapa), clientes y prospectos
+GET {{base}}/oportunidades
+Authorization: Bearer {{vendedor.response.body.access}}
+
+###
+GET {{base}}/clientes
+Authorization: Bearer {{vendedor.response.body.access}}
+
+###
+GET {{base}}/prospectos
+Authorization: Bearer {{vendedor.response.body.access}}
+
+### 11. Mover una oportunidad a Ganado: crea el cliente B2B y su usuario (cambiar el id por uno en Negociación)
+PATCH {{base}}/oportunidades/4
+Authorization: Bearer {{vendedor.response.body.access}}
+Content-Type: application/json
+
+{"etapa": "Ganado", "direccion_despacho": "Av. O'Higgins 100, Angol"}
+
+### 12. Registrar una interacción
+POST {{base}}/interacciones
+Authorization: Bearer {{vendedor.response.body.access}}
+Content-Type: application/json
+
+{"id_oportunidad": 1, "tipo": "llamada", "detalle": "Se agenda reunión para el lunes."}
+
+### 13. Login despachador
+# @name despacho
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"email": "despacho@cofrial.cl", "password": "{{password}}"}
+
+### 14. Recibido -> En preparación
+PATCH {{base}}/pedidos/{{pedido.response.body.id_pedido}}
+Authorization: Bearer {{despacho.response.body.access}}
+Content-Type: application/json
+
+{"estado": "En preparación"}
+
+### 15. Despachar: exige camión y crea el despacho
+PATCH {{base}}/pedidos/{{pedido.response.body.id_pedido}}
+Authorization: Bearer {{despacho.response.body.access}}
+Content-Type: application/json
+
+{"estado": "Despachado", "camion_id": "CAM-007"}
+
+### 16. Entregado: completa despachos.fecha_entrega
+PATCH {{base}}/pedidos/{{pedido.response.body.id_pedido}}
+Authorization: Bearer {{despacho.response.body.access}}
+Content-Type: application/json
+
+{"estado": "Entregado"}
+
+### 17. Flota (última lectura IoT por camión; "lectura" viene null hasta la Fase 4)
+GET {{base}}/flota
+Authorization: Bearer {{despacho.response.body.access}}
+
+### 18. Permisos: el vendedor NO puede cambiar estados (403)
+PATCH {{base}}/pedidos/1
+Authorization: Bearer {{vendedor.response.body.access}}
+Content-Type: application/json
+
+{"estado": "En preparación"}
