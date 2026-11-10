@@ -63,11 +63,31 @@ ssh -i C:\ruta\labsuser.pem ec2-user@<IP_EC2>
 En cada EC2:
 ```bash
 git clone <URL del repositorio> cofrial && cd cofrial
-nano .env        # pegar los valores de producción (DB_HOST = endpoint RDS)
+nano .env        # pegar los valores de producción (ver la lista de abajo)
 ```
-- Front-Office: `docker compose -f deploy/docker-compose.front.yml up -d --build`, luego
-  `docker compose -f deploy/docker-compose.front.yml exec backend python manage.py migrate` y `... seed_demo`.
-- IoT: `cd iot-simulator && docker compose up -d --build`.
+Valores del `.env` de producción (el mismo archivo en las dos EC2, en la raíz del repositorio):
+```
+DJANGO_SECRET_KEY=<clave nueva, larga y aleatoria>
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=<Elastic IP>
+CORS_ALLOWED_ORIGINS=http://<Elastic IP>
+DB_HOST=<endpoint de RDS>
+DB_PORT=5432
+DB_NAME=cofrial
+DB_USER=cofrial_admin
+DB_PASSWORD=<contraseña de RDS>
+GROQ_API_KEY=<clave de console.groq.com>
+GROQ_MODEL=openai/gpt-oss-20b
+DEMO_PASSWORD=<contraseña de las cuentas demo>
+INTERVALO_SEG=5
+PROB_FALLA=0.02
+```
+- Front-Office: `docker compose -f deploy/docker-compose.front.yml up -d --build`. El backend aplica las
+  migraciones solo al arrancar. La primera vez, cargar los datos demo:
+  `docker compose -f deploy/docker-compose.front.yml exec backend python manage.py seed_demo`.
+- IoT: `cd iot-simulator && docker compose up -d --build` (lee el `.env` de la raíz). Levantarlo **después**
+  del Front-Office, porque necesita las tablas y los camiones ya creados.
+- Para actualizar el código más adelante: `git pull` y repetir el `up -d --build` en cada EC2.
 
 Si el repositorio es privado, usar un token de GitHub de solo lectura, o copiar con `scp`.
 

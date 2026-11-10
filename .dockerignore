@@ -1,0 +1,12 @@
+# Contexto de build de frontend/Dockerfile (raiz del repositorio)
+.git
+.env
+**/.env
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+backend
+iot-simulator
+docs
+*.pem
