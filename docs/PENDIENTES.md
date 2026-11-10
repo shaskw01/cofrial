@@ -21,7 +21,7 @@ Marcar cada punto al terminarlo.
   - `deploy/nginx.conf`: sirve el frontend, redirige `/api` y `/admin` a Django y sirve los archivos estáticos del admin.
   - `deploy/docker-compose.front.yml`: servicios `nginx` y `backend` (gunicorn), con `restart: unless-stopped`.
   - Estáticos del admin: el backend corre `collectstatic` al arrancar y nginx los sirve desde un volumen compartido.
-- [ ] **2. Subir el código a GitHub**: `main` en GitHub solo tiene la Fase 1. Las fases 2 a 5 están en ramas
+- [x] **2. Subir el código a GitHub** (hecho el 10-11: fases 2 a 6 unidas a `main` y subidas): `main` en GitHub solo tiene la Fase 1. Las fases 2 a 5 están en ramas
   locales (`fase2-api`, `fase3-frontend`, `fase4-iot`, `fase5-bi-ia`, `fase6-despliegue`; cada una contiene a la
   anterior, así que basta unir la última).
   Hay que unirlas a `main` y hacer push, porque las EC2 clonan desde GitHub.
@@ -43,7 +43,7 @@ Marcar cada punto al terminarlo.
 
 ## Pendientes en el entorno local
 
-- [ ] **7. Reiniciar el backend local** para que tome `GROQ_API_KEY` (el `.env` se lee solo al arrancar):
+- [x] **7. Reiniciar el backend local** (hecho el 10-11: la IA clasifica por la interfaz) para que tome `GROQ_API_KEY` (el `.env` se lee solo al arrancar):
   `Ctrl+C` y `python manage.py runserver 8001`. Después probar por la interfaz: como `cliente@gmail.com`,
   en **Ayuda**, escribir "llegó la carne descongelada"; debe quedar como reclamo por temperatura, prioridad
   alta, y aparecer en **Requerimientos** para el vendedor. La clasificación ya se probó contra Groq real
