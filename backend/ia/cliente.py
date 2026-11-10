@@ -52,7 +52,7 @@ def _llamar_groq(texto: str) -> str:
     cuerpo = {
         "model": settings.GROQ_MODEL,
         "temperature": 0,
-        "max_tokens": 400,
+        "max_tokens": 1024,
         "response_format": {"type": "json_object"},
         "messages": [
             {"role": "system", "content": INSTRUCCIONES},

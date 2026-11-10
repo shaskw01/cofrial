@@ -133,7 +133,7 @@ REST_FRAMEWORK = {
 
 # IA de costo cero: Groq (API compatible con OpenAI). Sin clave, las interacciones quedan "sin clasificar".
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant").strip()
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip()
 GROQ_BASE_URL = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
 GROQ_TIMEOUT = 10
 
