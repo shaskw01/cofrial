@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cuentas.permisos import EsLogistica
-from tienda.models import ESTADO_DESPACHADO
+from tienda.models import ESTADO_DESPACHADO, Categoria, DetallePedido
 
 from .models import Camion, Despacho, TelemetriaRuta
 
@@ -11,6 +11,31 @@ from .models import Camion, Despacho, TelemetriaRuta
 def despachos_activos():
     """Despacho activo = en ruta: sin fecha de entrega y con el pedido aun en estado Despachado."""
     return Despacho.objects.filter(fecha_entrega__isnull=True, pedido__estado__nombre=ESTADO_DESPACHADO)
+
+
+def rangos_de_carga() -> dict:
+    """
+    Rango de conservacion por camion (regla de negocio "Alerta de frio"):
+    con despacho activo, el mas estricto entre las categorias de los productos del pedido;
+    sin despacho, el de Carnes congeladas. Devuelve {camion_id: (temp_min, temp_max)} + clave None = por defecto.
+    """
+    base = Categoria.objects.filter(nombre="Carnes congeladas").values_list("temp_min", "temp_max").first()
+    rangos = {None: base or (-25, -18)}
+    filas = (
+        DetallePedido.objects.filter(pedido__despacho__in=despachos_activos())
+        .values_list("pedido__despacho__camion_id", "producto__categoria__temp_min", "producto__categoria__temp_max")
+        .distinct()
+    )
+    por_camion: dict[str, list] = {}
+    for camion_id, t_min, t_max in filas:
+        por_camion.setdefault(camion_id, []).append((t_min, t_max))
+    for camion_id, lista in por_camion.items():
+        t_min, t_max = max(r[0] for r in lista), min(r[1] for r in lista)
+        if t_min >= t_max:
+            # Carga mixta sin rango comun (congelado + refrigerado): manda la categoria mas fria.
+            t_min, t_max = min(lista, key=lambda r: r[1])
+        rangos[camion_id] = (t_min, t_max)
+    return rangos
 
 
 def _despacho_a_dict(d) -> dict:
@@ -78,9 +103,11 @@ class FlotaView(APIView):
         for d in despachos_activos().select_related("pedido__cliente", "pedido__estado"):
             en_ruta.setdefault(d.camion_id, []).append(_despacho_a_dict(d))
 
+        rangos = rangos_de_carga()
         salida = []
         for c in camiones:
             lectura = lecturas.get(c.id_ultima)
+            t_min, t_max = rangos.get(c.camion_id, rangos[None])
             salida.append(
                 {
                     "camion_id": c.camion_id,
@@ -88,6 +115,7 @@ class FlotaView(APIView):
                     "capacidad_kg": c.capacidad_kg,
                     "activo": c.activo,
                     "despachos": en_ruta.get(c.camion_id, []),
+                    "rango": {"temp_min": t_min, "temp_max": t_max},
                     "lectura": {
                         "temp_camara": lectura.temp_camara,
                         "lat": lectura.lat,

@@ -2,7 +2,7 @@
 #   Solo la BD:        docker compose -f docker-compose.dev.yml up -d db
 #   BD + backend:      docker compose -f docker-compose.dev.yml --profile backend up -d --build
 # El puerto publicado de Postgres en tu PC es DB_PORT (del .env). Dentro de la red de Docker siempre es 5432.
-# El frontend se agrega en la Fase 3.
+# El frontend corre aparte: cd frontend && npm install && npm run dev  (http://localhost:5174)
 
 name: cofrial
 

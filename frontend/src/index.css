@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* Identidad Cofrial: cadena de frio. Azul = congelado, verde frio = refrigerado, rojo = ruptura de frio. */
+@theme {
+  --color-escarcha: #f1f5f8;
+  --color-hielo: #d9e4ec;
+  --color-camara: #0f2b3d;
+  --color-pizarra: #4a6172;
+  --color-glaciar: #1c5fa6;
+  --color-glaciar-suave: #e3eef9;
+  --color-fresco: #12827c;
+  --color-fresco-suave: #dff2f0;
+  --color-ruptura: #c93a2b;
+  --color-ruptura-suave: #fbe6e2;
+  --color-ambar: #a86a12;
+  --color-ambar-suave: #fbf0da;
+
+  --font-sans: "Barlow", system-ui, sans-serif;
+  --font-rotulo: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-escarcha);
+    color: var(--color-camara);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-rotulo);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-glaciar);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .cifra {
+    font-family: var(--font-rotulo);
+    font-variant-numeric: tabular-nums;
+  }
+  .boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    transition:
+      background-color 120ms,
+      border-color 120ms;
+  }
+  .boton:disabled {
+    opacity: 0.5;
+  }
+  .boton-primario {
+    background: var(--color-camara);
+    color: white;
+  }
+  .boton-primario:hover:not(:disabled) {
+    background: var(--color-glaciar);
+  }
+  .boton-linea {
+    background: white;
+    border-color: var(--color-hielo);
+    color: var(--color-camara);
+  }
+  .boton-linea:hover:not(:disabled) {
+    border-color: var(--color-camara);
+  }
+  .boton-peligro {
+    background: white;
+    border-color: var(--color-ruptura);
+    color: var(--color-ruptura);
+  }
+  .boton-peligro:hover:not(:disabled) {
+    background: var(--color-ruptura-suave);
+  }
+  .boton-chico {
+    min-height: 2rem;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.875rem;
+  }
+  .campo {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.7rem;
+    background: white;
+    border: 1px solid var(--color-hielo);
+    border-radius: 4px;
+    color: var(--color-camara);
+  }
+  .campo:hover {
+    border-color: var(--color-pizarra);
+  }
+  .caja {
+    background: white;
+    border: 1px solid var(--color-hielo);
+    border-radius: 6px;
+  }
+}

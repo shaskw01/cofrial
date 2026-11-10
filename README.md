@@ -24,6 +24,21 @@ python manage.py seed_demo      # datos demo (idempotente; --reset-historial par
 python manage.py runserver      # http://localhost:8000/admin  →  admin@cofrial.cl / DEMO_PASSWORD
 ```
 
+### Frontend (otra terminal, con el backend corriendo)
+
+```powershell
+cd frontend
+npm install
+npm run dev                     # http://localhost:5174
+```
+
+El frontend llama a `/api` y Vite lo redirige al backend en `http://localhost:<BACKEND_PORT>` (el del `.env`
+de la raíz; 8000 si no está definido). Si corres `runserver` en otro puerto, pon ese valor en `BACKEND_PORT`.
+
+- Tienda: `/` (catálogo), `/carrito`, `/mis-pedidos`, `/ingresar`.
+- Panel interno: `/panel` (pedidos, pipeline, clientes, prospectos y flota, según el rol).
+- La API se puede probar a mano con `docs/api.http` y con `python manage.py test`.
+
 ## Trabajo en equipo con git
 
 - `main` siempre debe funcionar. Cada cambio va en una rama: `git switch -c fase2-api-tienda`.
