@@ -1,0 +1,55 @@
+# Nodo IoT (EC2 Back-Office): 5 contenedores, cada uno simula 10 camiones e inserta en RDS.
+#
+#   cp .env.example .env     (completar con el endpoint y la clave de la base)
+#   docker compose up -d --build
+#   docker compose ps
+#   docker compose logs -f
+#
+# Las variables de conexion salen de iot-simulator/.env (nunca se sube a git).
+
+name: cofrial-iot
+
+x-simulador: &simulador
+  build: .
+  image: cofrial-iot-simulador
+  restart: unless-stopped
+  env_file: .env
+  # Solo para pruebas en el PC: permite llegar al Postgres local con DB_HOST=host.docker.internal
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  logging:
+    driver: json-file
+    options:
+      max-size: "5m"
+      max-file: "2"
+
+services:
+  sim-cam-001-010:
+    <<: *simulador
+    environment:
+      CAMION_DESDE: "1"
+      CAMION_HASTA: "10"
+
+  sim-cam-011-020:
+    <<: *simulador
+    environment:
+      CAMION_DESDE: "11"
+      CAMION_HASTA: "20"
+
+  sim-cam-021-030:
+    <<: *simulador
+    environment:
+      CAMION_DESDE: "21"
+      CAMION_HASTA: "30"
+
+  sim-cam-031-040:
+    <<: *simulador
+    environment:
+      CAMION_DESDE: "31"
+      CAMION_HASTA: "40"
+
+  sim-cam-041-050:
+    <<: *simulador
+    environment:
+      CAMION_DESDE: "41"
+      CAMION_HASTA: "50"
