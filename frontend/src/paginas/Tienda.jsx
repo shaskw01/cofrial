@@ -63,6 +63,9 @@ export default function Tienda() {
                 Mis pedidos
               </NavLink>
             )}
+            <NavLink to="/ayuda" className={enlace}>
+              Ayuda
+            </NavLink>
             {esInterno && (
               <NavLink to={inicioSegunRol(usuario)} className={enlace}>
                 Panel interno

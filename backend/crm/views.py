@@ -125,7 +125,10 @@ class InteraccionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
     serializer_class = InteraccionSerializer
 
     def get_queryset(self):
-        qs = Interaccion.objects.order_by("-fecha")
+        qs = Interaccion.objects.select_related("cliente").order_by("-fecha")
+        if self.request.query_params.get("web") in ("1", "true"):
+            # Requerimientos que llegaron por el formulario "Ayuda" de la tienda
+            qs = qs.filter(detalle__startswith="Mensaje web del cliente:")
         oportunidad = self.request.query_params.get("oportunidad")
         if oportunidad:
             qs = qs.filter(oportunidad_id=oportunidad)

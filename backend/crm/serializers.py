@@ -208,11 +208,22 @@ class InteraccionSerializer(serializers.ModelSerializer):
         source="cliente", queryset=Cliente.objects.all(), required=False, allow_null=True
     )
     tipo = serializers.ChoiceField(choices=TIPOS_INTERACCION)
+    cliente_nombre = serializers.CharField(source="cliente.nombre_razon_social", read_only=True, default=None)
+    # Solo para los mensajes del formulario web: {categoria, prioridad} que asigno la IA
+    clasificacion = serializers.SerializerMethodField()
 
     class Meta:
         model = Interaccion
-        fields = ["id_interaccion", "id_oportunidad", "id_cliente", "tipo", "detalle", "fecha"]
+        fields = [
+            "id_interaccion", "id_oportunidad", "id_cliente", "cliente_nombre", "tipo", "detalle", "fecha",
+            "clasificacion",
+        ]
         read_only_fields = ["fecha"]
+
+    def get_clasificacion(self, interaccion):
+        from ia.views import leer_clasificacion
+
+        return leer_clasificacion(interaccion.detalle)
 
     def validate(self, attrs):
         if not attrs.get("oportunidad") and not attrs.get("cliente"):

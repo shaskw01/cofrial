@@ -9,6 +9,7 @@ export const ROLES_INTERNOS = ['administrador', 'vendedor', 'despachador']
 
 export function inicioSegunRol(usuario) {
   if (!usuario || usuario.rol === 'cliente') return '/'
+  if (usuario.rol === 'administrador') return '/panel/dashboard'
   return usuario.rol === 'vendedor' ? '/panel/pipeline' : '/panel/pedidos'
 }
 

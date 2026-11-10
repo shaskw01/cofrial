@@ -6,10 +6,12 @@ import { inicioSegunRol, useSesion } from '../contexto'
 
 // Que ve cada rol (CLAUDE.md): vendedor = CRM; despachador = pedidos, despachos y flota; administrador = todo.
 export const SECCIONES = [
+  { ruta: 'dashboard', nombre: 'Dashboard', roles: ['administrador'] },
   { ruta: 'pedidos', nombre: 'Pedidos', roles: ['administrador', 'vendedor', 'despachador'] },
   { ruta: 'pipeline', nombre: 'Pipeline comercial', roles: ['administrador', 'vendedor'] },
   { ruta: 'clientes', nombre: 'Clientes', roles: ['administrador', 'vendedor'] },
   { ruta: 'prospectos', nombre: 'Prospectos', roles: ['administrador', 'vendedor'] },
+  { ruta: 'requerimientos', nombre: 'Requerimientos', roles: ['administrador', 'vendedor'] },
   { ruta: 'flota', nombre: 'Flota', roles: ['administrador', 'despachador'] },
 ]
 

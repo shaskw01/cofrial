@@ -271,3 +271,103 @@ class CrmTests(ApiTestCase):
 
         hospital = Cliente.objects.get(usuario__email="compras@hospitalregional.cl")
         self.assertEqual(self.client.delete(f"/api/clientes/{hospital.pk}").status_code, 409)
+
+
+class BiTests(ApiTestCase):
+    def test_resumen_solo_administrador(self):
+        self.login("vendedor@cofrial.cl")
+        self.assertEqual(self.client.get("/api/bi/resumen").status_code, 403)
+
+    def test_resumen_cruza_ventas_con_alertas(self):
+        from logistica.models import TelemetriaRuta
+
+        # Pedido nuevo, despachado en un camion que reporta ruptura de frio
+        self.login("cliente@gmail.com")
+        pedido = self.checkout(Producto.objects.get(sku="CAR-001"), 10).data
+        self.logout()
+        self.login("admin@cofrial.cl")
+        url = f"/api/pedidos/{pedido['id_pedido']}"
+        self.client.patch(url, {"estado": "En preparación"}, format="json")
+        self.client.patch(url, {"estado": "Despachado", "camion_id": "CAM-050"}, format="json")
+
+        antes = self.client.get("/api/bi/resumen").data
+        self.assertEqual(antes["operativo"]["camiones_en_alerta"], 0)
+        self.assertNotIn(pedido["id_pedido"], [p["id_pedido"] for p in antes["cruce"]["pedidos_en_riesgo"]])
+
+        TelemetriaRuta.objects.create(
+            camion_id="CAM-050", temp_camara=-9.5, lat=-38.74, long=-72.6, combustible_pct=60, alerta_ruptura_frio=True
+        )
+        r = self.client.get("/api/bi/resumen")
+        self.assertEqual(r.status_code, 200, r.content)
+        d = r.data
+        self.assertEqual(d["operativo"]["camiones_en_alerta_ids"], ["CAM-050"])
+        self.assertEqual(d["operativo"]["alertas_ultima_hora"], 1)
+        self.assertEqual(sum(m["camiones_en_alerta"] for m in d["operativo"]["alertas_por_minuto"]), 1)
+        en_riesgo = {p["id_pedido"]: p for p in d["cruce"]["pedidos_en_riesgo"]}
+        self.assertEqual(float(en_riesgo[pedido["id_pedido"]]["monto"]), float(pedido["total"]))
+        self.assertGreaterEqual(float(d["cruce"]["monto_en_riesgo"]), float(pedido["total"]))
+        self.assertGreater(d["cruce"]["pct_despachos_con_alerta"], antes["cruce"]["pct_despachos_con_alerta"])
+        self.assertEqual(len(d["comercial"]["ventas_por_dia"]), 7)
+        self.assertGreaterEqual(float(d["comercial"]["ventas_hoy"]), float(pedido["total"]))
+        self.assertEqual({c["nombre"] for c in d["comercial"]["por_canal"]}, {"web", "vendedor"})
+        self.assertEqual(len(d["comercial"]["pipeline"]["etapas"]), 6)
+
+
+class IaTests(ApiTestCase):
+    def _contacto(self, texto):
+        return self.client.post("/api/contacto", {"texto": texto}, format="json")
+
+    def test_sin_clave_queda_sin_clasificar_y_no_se_cae(self):
+        from django.test import override_settings
+
+        self.login("cliente@gmail.com")
+        with override_settings(GROQ_API_KEY=""):
+            r = self._contacto("Hola, quiero saber cuándo llega mi pedido.")
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertFalse(r.data["clasificado"])
+        self.assertEqual(r.data["categoria"], "sin_clasificar")
+
+    def test_groq_caido_queda_sin_clasificar(self):
+        from unittest import mock
+
+        from django.test import override_settings
+
+        self.login("cliente@gmail.com")
+        with override_settings(GROQ_API_KEY="clave-falsa"), mock.patch(
+            "ia.cliente._llamar_groq", side_effect=TimeoutError("sin red")
+        ):
+            r = self._contacto("Llegó la carne descongelada.")
+        self.assertEqual(r.status_code, 201)
+        self.assertFalse(r.data["clasificado"])
+
+    def test_clasifica_y_aparece_en_el_crm_con_prioridad(self):
+        import json
+        from unittest import mock
+
+        from django.test import override_settings
+
+        respuesta = json.dumps(
+            {"categoria": "reclamo_temperatura", "prioridad": "media", "resumen": "Carne llegó descongelada.",
+             "respuesta_sugerida": "Lamentamos lo ocurrido. Revisaremos el despacho de inmediato."}
+        )
+        self.login("cliente@gmail.com")
+        with override_settings(GROQ_API_KEY="clave-falsa"), mock.patch("ia.cliente._llamar_groq", return_value=respuesta):
+            r = self._contacto("Llegó la carne descongelada.")
+            solo = self.client.post("/api/ia/clasificar", {"texto": "Llegó la carne descongelada."}, format="json")
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(r.data["categoria"], "reclamo_temperatura")
+        self.assertEqual(r.data["prioridad"], "alta")  # la regla de negocio sube la prioridad
+        self.assertEqual(solo.data["categoria"], "reclamo_temperatura")
+        self.logout()
+
+        self.login("vendedor@cofrial.cl")
+        lista = self.client.get("/api/interacciones", {"web": 1}).data
+        self.assertEqual(lista[0]["id_interaccion"], r.data["id_interaccion"])
+        self.assertEqual(lista[0]["tipo"], "reclamo")
+        self.assertEqual(lista[0]["clasificacion"], {"categoria": "reclamo_temperatura", "prioridad": "alta"})
+        self.assertEqual(lista[0]["cliente_nombre"], "María José González")
+
+    def test_contacto_exige_cliente(self):
+        self.assertEqual(self._contacto("Hola, una consulta.").status_code, 401)
+        self.login("vendedor@cofrial.cl")
+        self.assertEqual(self._contacto("Hola, una consulta.").status_code, 403)
