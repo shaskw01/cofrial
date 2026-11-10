@@ -1,11 +1,12 @@
 # Nodo IoT (EC2 Back-Office): 5 contenedores, cada uno simula 10 camiones e inserta en RDS.
 #
-#   cp .env.example .env     (completar con el endpoint y la clave de la base)
 #   docker compose up -d --build
 #   docker compose ps
 #   docker compose logs -f
 #
-# Las variables de conexion salen de iot-simulator/.env (nunca se sube a git).
+# Variables de conexion (nunca se suben a git):
+#   - En la EC2: el .env de la raiz del repositorio (../.env), el mismo de docs/AWS_SETUP.md, con DB_HOST = endpoint de RDS.
+#   - En tu PC: crea iot-simulator/.env a partir de .env.example; su linea IOT_ENV_FILE=.env hace que se use ese archivo.
 
 name: cofrial-iot
 
@@ -13,7 +14,7 @@ x-simulador: &simulador
   build: .
   image: cofrial-iot-simulador
   restart: unless-stopped
-  env_file: .env
+  env_file: ${IOT_ENV_FILE:-../.env}
   # Solo para pruebas en el PC: permite llegar al Postgres local con DB_HOST=host.docker.internal
   extra_hosts:
     - "host.docker.internal:host-gateway"
