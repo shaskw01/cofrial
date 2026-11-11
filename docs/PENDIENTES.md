@@ -7,7 +7,7 @@ Marcar cada punto al terminarlo.
 
 | # | Dimensión | Estado | Qué falta |
 |---|---|---|---|
-| 1 | Despliegue en AWS Academy | **Pendiente** | Toda la Fase 6 (puntos 1 a 6 de abajo). |
+| 1 | Despliegue en AWS Academy | Desplegado | Falta la prueba del punto 6 (celular y reinicio del lab). |
 | 2 | E-commerce y CRM operativo | Listo en local | Probarlo ya desplegado. |
 | 3 | Simulación IoT con Docker en EC2 | Listo en local | Correrlo en la EC2 IoT dedicada, contra RDS. |
 | 4 | Dashboard BI en vivo | Listo en local | Probarlo ya desplegado, con el simulador de la EC2. |
@@ -25,9 +25,9 @@ Marcar cada punto al terminarlo.
   locales (`fase2-api`, `fase3-frontend`, `fase4-iot`, `fase5-bi-ia`, `fase6-despliegue`; cada una contiene a la
   anterior, así que basta unir la última).
   Hay que unirlas a `main` y hacer push, porque las EC2 clonan desde GitHub.
-- [ ] **3. Infraestructura AWS** (`docs/AWS_SETUP.md`, pasos 1 a 6): VPC y subredes, los 3 Security Groups,
+- [x] **3. Infraestructura AWS** (hecho el 10-11: VPC, SG, RDS `cofrial-db`, EC2 `ec2-front-office` (Elastic IP 34.197.29.147) y `ec2-iot`) (`docs/AWS_SETUP.md`, pasos 1 a 6): VPC y subredes, los 3 Security Groups,
   DB Subnet Group, RDS PostgreSQL 16, EC2 Front-Office con Elastic IP y EC2 IoT.
-- [ ] **4. `.env` de producción en cada EC2** (nunca en git; la plantilla completa está en `docs/AWS_SETUP.md`, paso 7):
+- [x] **4. `.env` de producción en cada EC2** (hecho el 10-11 en las dos EC2) (nunca en git; la plantilla completa está en `docs/AWS_SETUP.md`, paso 7):
   - `DJANGO_DEBUG=False`
   - `DJANGO_SECRET_KEY` nueva, larga y aleatoria
   - `DJANGO_ALLOWED_HOSTS` con la Elastic IP
@@ -35,7 +35,7 @@ Marcar cada punto al terminarlo.
   - `DB_HOST` con el endpoint de RDS, `DB_PORT=5432`, y la contraseña de RDS en `DB_PASSWORD`
   - `GROQ_API_KEY` y `GROQ_MODEL=openai/gpt-oss-20b`
   - `DEMO_PASSWORD`
-- [ ] **5. Levantar y cargar datos**: en Front-Office, `docker compose -f deploy/docker-compose.front.yml up -d --build`,
+- [x] **5. Levantar y cargar datos** (hecho el 10-11: Front-Office arriba, `seed_demo` en RDS, 5 simuladores insertando): en Front-Office, `docker compose -f deploy/docker-compose.front.yml up -d --build`,
   luego `seed_demo` contra RDS (las migraciones se aplican solas al arrancar). En la EC2 IoT, `cd iot-simulator && docker compose up -d --build`
   (lee el `.env` de la raíz del repositorio).
 - [ ] **6. Prueba de la Fase 6**: desde un celular con datos móviles abrir `http://<Elastic IP>`, comprar, y ver
