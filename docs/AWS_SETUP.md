@@ -14,11 +14,12 @@ Todo en la región **us-east-1**. Los nombres y rangos son los del Informe Hito 
    (Las privadas quedan con la tabla principal, que solo tiene la ruta local.)
 
 ## 2. Security Groups (en vpc-cofrial)
+AWS no permite nombres que empiecen con `sg-`, por eso llevan el prefijo `cofrial-`.
 | Nombre | Entrada |
 |---|---|
-| `sg-web` | HTTP 80 desde 0.0.0.0/0 · HTTPS 443 desde 0.0.0.0/0 · SSH 22 desde **My IP** |
-| `sg-iot` | SSH 22 desde **My IP** (nada más) |
-| `sg-rds` | PostgreSQL 5432 desde **sg-web** · PostgreSQL 5432 desde **sg-iot** |
+| `cofrial-sg-web` | HTTP 80 desde 0.0.0.0/0 · HTTPS 443 desde 0.0.0.0/0 · SSH 22 desde **My IP** |
+| `cofrial-sg-iot` | SSH 22 desde **My IP** (nada más) |
+| `cofrial-sg-rds` | PostgreSQL 5432 desde **cofrial-sg-web** · PostgreSQL 5432 desde **cofrial-sg-iot** |
 
 ## 3. DB Subnet Group
 RDS → Subnet groups → Create: `dbsg-cofrial`, VPC `vpc-cofrial`, zonas us-east-1a y us-east-1b, subredes `10.0.3.0/24` y `10.0.4.0/24`.
@@ -29,7 +30,7 @@ RDS → Create database → Standard create:
 - Template **Free tier** o Dev/Test · Single-AZ.
 - Identificador `cofrial-db` · usuario `cofrial_admin` · contraseña segura (guardarla en `.env`, no en git).
 - Clase **db.t3.micro** · almacenamiento **gp3 20 GB**, sin autoscaling.
-- Conectividad: VPC `vpc-cofrial`, subnet group `dbsg-cofrial`, **Public access: No**, Security group `sg-rds` (quitar el default).
+- Conectividad: VPC `vpc-cofrial`, subnet group `dbsg-cofrial`, **Public access: No**, Security group `cofrial-sg-rds` (quitar el default).
 - Additional configuration: Initial database name `cofrial`, backups automáticos **7 días**.
 - Esperar estado **Available** (~10 min) y copiar el **Endpoint** → `DB_HOST`.
 
@@ -37,7 +38,7 @@ RDS → Create database → Standard create:
 EC2 → Launch instance:
 - Nombre `ec2-front-office` · AMI **Amazon Linux 2023** · tipo **t3.small**.
 - Key pair: usar `vockey` (descargar `labsuser.pem` desde "AWS Details" del Learner Lab) o crear uno nuevo.
-- Network: `vpc-cofrial`, `subred-publica`, Security group `sg-web`.
+- Network: `vpc-cofrial`, `subred-publica`, Security group `cofrial-sg-web`.
 - Storage: 20 GB gp3.
 - Advanced → User data:
 ```bash
@@ -49,11 +50,14 @@ usermod -aG docker ec2-user
 mkdir -p /usr/local/lib/docker/cli-plugins
 curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
 chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+# buildx: Compose lo exige para construir imagenes y el paquete docker de Amazon Linux 2023 no lo trae
+curl -SL https://github.com/docker/buildx/releases/download/v0.21.2/buildx-v0.21.2.linux-amd64 -o /usr/local/lib/docker/cli-plugins/docker-buildx
+chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 ```
 - Elastic IPs → Allocate → Associate a `ec2-front-office`.
 
 ## 6. EC2 Back-Office IoT
-Igual que el paso 5, pero: nombre `ec2-iot`, tipo **t3.micro**, Security group **`sg-iot`**, sin Elastic IP.
+Igual que el paso 5, pero: nombre `ec2-iot`, tipo **t3.micro**, Security group **`cofrial-sg-iot`**, sin Elastic IP.
 
 ## 7. Subir el código y levantar
 Desde la terminal de VS Code (PowerShell), con `labsuser.pem` en una carpeta segura:
